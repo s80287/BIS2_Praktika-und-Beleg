@@ -1,0 +1,12 @@
+*&---------------------------------------------------------------------*
+*& Report ZAB_IW2180287010LDB
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAB_IW2180287010LDB.
+
+NODES LFA1.
+WRITE: (10) 'Krednr', (35) 'Name Kreditors', (10) 'Ort', (15) 'Name Anlegers', (12) 'Anlagedatum', (10) 'Debitornr'.
+ULINE.
+GET LFA1.
+  WRITE: (10) LFA1-LIFNR, (35) LFA1-NAME1, (10) LFA1-ORT01, (15) LFA1-ERNAM, (12) LFA1-ERDAT, (10) LFA1-KUNNR.
