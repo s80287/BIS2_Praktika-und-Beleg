@@ -1,0 +1,48 @@
+*&---------------------------------------------------------------------*
+*& Report ZAB_IW2180287015SQL
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAB_IW2180287015SQL.
+
+DATA WA_LFA1 TYPE LFA1.
+
+"PARAMETERS: P_ORT(10), P_ERDAT, P_KUNNR.
+PARAMETERS: P_ORT LIKE WA_LFA1-ORT01.
+
+WRITE: (10) 'Krednr', (30) 'Name Kreditors', (10) 'Ort',
+  (15) 'Name Anlegers', (12) 'Anlagedatum', (10) 'Debitornr'.
+ULINE.
+
+SELECT LIFNR, NAME1, ORT01, ERNAM, ERDAT, KUNNR FROM LFA1
+  INTO CORRESPONDING FIELDS OF @WA_LFA1
+  ".
+  " Praktikumsaufgabe 2
+  " Teil a: alle Kreditoren aus Dresden
+  "WHERE ORT01 LIKE 'Dresden'.
+  WHERE ORT01 LIKE @P_ORT.
+
+
+  " Teil b: alle Kreditoren, die nicht aus Dresden kommen
+  "WHERE ORT01 NOT LIKE 'Dresden'.
+
+  " Teil c: Kreditoren, Anlagedatum zwischen 01.03.2023 und 01.08.2023
+  " funktioniert
+  "WHERE ERDAT = '20230427'.
+  " funktioniert
+  "WHERE ERDAT BETWEEN '20230301' AND '20230801'.
+
+  " Teil d: Ort Dresden, gleichzeitig Debitor
+  "WHERE ORT01 LIKE 'Dresden'
+  "  AND KUNNR NOT LIKE ''.
+
+  " Teil e: Ort Dresden, nicht gleichzeitig Debitor, Zeitraum zw. 01.03.23 u. 01.08.23
+*  WHERE ORT01 LIKE 'Dresden'
+*    AND KUNNR LIKE ''
+*    AND ERDAT BETWEEN '20230301' AND '20230801'.
+
+
+WRITE: (10) WA_LFA1-LIFNR, (30) WA_LFA1-NAME1, (10) WA_LFA1-ORT01,
+  (15) WA_LFA1-ERNAM, (12) WA_LFA1-ERDAT, (10) WA_LFA1-KUNNR.
+NEW-LINE.
+ENDSELECT.
