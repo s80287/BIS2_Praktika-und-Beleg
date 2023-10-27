@@ -1,0 +1,54 @@
+*&---------------------------------------------------------------------*
+*& Report ZAB_IW2180287032
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAB_IW2180287032.
+
+"VALUE 0 nicht nötig
+DATA sum LIKE BSIK-DMBTR VALUE 0.
+DATA sumOpen TYPE I VALUE 0.
+DATA sumReceipt TYPE I VALUE 0.
+
+NODES: LFA1, BSIK.
+
+"START-OF-SELECTION.
+GET LFA1.
+  "Erstmal sumOpen, sumReceipt initialisieren, sonst funktioniert es nicht richtig
+  sumOpen = 0.
+  sumReceipt = 0.
+  WRITE: (10) LFA1-LIFNR, (35) LFA1-NAME1, (12)LFA1-ERNAM.
+ULINE.
+
+GET BSIK.
+  IF BSIK-BELNR > ''.
+    sumReceipt = sumReceipt + 1.
+  ENDIF.
+
+  IF sumReceipt = 1.
+    WRITE: (10)'BelegNr', (8) 'BuchDt', (23)'Betrag', (10) 'GBelegNr', (8) 'GBuchDt'.
+    ULINE.
+  ENDIF.
+
+  WRITE: (10) BSIK-BELNR, (8) BSIK-BUDAT, (23) BSIK-DMBTR,
+    (10) BSIK-AUGBL, (8) BSIK-AUGDT.
+  sum = sum + BSIK-DMBTR.
+  IF BSIK-AUGBL = ''.
+    sumOpen = sumOpen + 1.
+  ENDIF.
+
+*GET BSIK LATE.
+*Falsch, nach jeder Zeile ausgegeben
+GET LFA1 LATE.
+  ULINE.
+  WRITE: (19)'Summe: ', (23)sum.
+  IF sumOpen > 0.
+    NEW-LINE.
+    WRITE: (32)'Anzahl offener Gegenbuchung: ', (10)sumOpen.
+  ELSE.
+      WRITE: 'Keine Gegenbuchung offen'.
+  ENDIF.
+  ULINE.
+
+END-OF-SELECTION.
+ULINE.
