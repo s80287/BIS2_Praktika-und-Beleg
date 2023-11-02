@@ -1,0 +1,103 @@
+*&---------------------------------------------------------------------*
+*& Report ZAB_IW2180287031
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAB_IW2180287031.
+
+TABLES: LFA1, BSIK, BSAK.
+
+"WRITE: (10) 'Lfnr', (35) 'Lfname', (8) 'Anleger'.
+"ULINE.
+
+DATA: sum LIKE BSIK-DMBTR VALUE 0,
+      sumOpen TYPE I VALUE 0,
+      sumReceipt TYPE I VALUE 0.
+
+DATA: L_LIFNR LIKE LFA1-LIFNR,
+      L_NAME1 LIKE LFA1-NAME1,
+      L_ERNAM LIKE LFA1-ERNAM.
+
+DATA: B_LIFNR LIKE BSIK-LIFNR,
+      B_BELNR LIKE BSIK-BELNR,
+      B_BUDAT LIKE BSIK-BUDAT,
+      B_DMBTR LIKE BSIK-DMBTR,
+      B_AUGBL LIKE BSIK-AUGBL,
+      B_AUGDT LIKE BSIK-AUGDT.
+
+SELECT LIFNR, NAME1, ERNAM
+  INTO (@L_LIFNR, @L_NAME1, @L_ERNAM)
+  FROM LFA1
+  ".
+  "WHERE LIFNR = 'KM80287'.
+  "WHERE LIFNR = 'KB00286E1'.
+  " %: 0 or more characters
+  WHERE LIFNR LIKE 'K%'.
+
+  sum = 0.
+  sumOpen = 0.
+  sumReceipt = 0.
+
+  WRITE: (10) L_LIFNR, (35) L_NAME1, (12) L_ERNAM.
+  ULINE.
+
+  "WRITE: (10)'BelegNr', (8) 'BuchDt', (23)'Betrag', (10) 'GBelegNr', (8) 'GBuchDt'.
+  "ULINE.
+
+  " nur BSIK, nichts angezeigt, keine offene Posten
+  " nur BSAK, alle abgeschlossene Posten
+  " probiere KB00286E1, 2 offene Posten mit nur BSIK
+
+  " BSAK: abgeschlossene Posten
+  SELECT BELNR, BUDAT, DMBTR, AUGBL, AUGDT
+    INTO (@B_BELNR, @B_BUDAT, @B_DMBTR, @B_AUGBL, @B_AUGDT)
+    FROM BSAK
+    WHERE LIFNR = @L_LIFNR.
+
+    sumReceipt = sumReceipt + 1.
+
+    IF sumReceipt = 1.
+      WRITE: (10)'BelegNr', (8) 'BuchDt', (23)'Betrag', (10) 'GBelegNr', (8) 'GBuchDt'.
+      ULINE.
+    ENDIF.
+
+    WRITE: (10) B_BELNR, (8) B_BUDAT, (23) B_DMBTR, (10) B_AUGBL, (8) B_AUGDT.
+    NEW-LINE.
+
+    sum = sum + B_DMBTR.
+
+  ENDSELECT.
+
+  " BSIK: offene Posten
+  SELECT BELNR, BUDAT, DMBTR, AUGBL, AUGDT
+    INTO (@B_BELNR, @B_BUDAT, @B_DMBTR, @B_AUGBL, @B_AUGDT)
+    FROM BSIK
+    WHERE LIFNR = @L_LIFNR.
+
+    sumReceipt = sumReceipt + 1.
+
+    IF sumReceipt = 1.
+      WRITE: (10)'BelegNr', (8) 'BuchDt', (23)'Betrag', (10) 'GBelegNr', (8) 'GBuchDt'.
+      ULINE.
+    ENDIF.
+
+    WRITE: (10) B_BELNR, (8) B_BUDAT, (23) B_DMBTR, (10) B_AUGBL, (8) B_AUGDT.
+    NEW-LINE.
+
+    sum = sum + B_DMBTR.
+    sumOpen = sumOpen + 1.
+
+  ENDSELECT.
+
+  ULINE.
+  WRITE: (19)'Summe: ', (23)sum.
+  IF sumOpen > 0.
+    NEW-LINE.
+    WRITE: (32)'Anzahl offener Gegenbuchung: ', (10)sumOpen.
+  ELSE.
+    WRITE: 'Keine Gegenbuchung offen'.
+  ENDIF.
+  ULINE.
+
+ENDSELECT.
+ULINE.
