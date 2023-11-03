@@ -1,0 +1,90 @@
+*&---------------------------------------------------------------------*
+*& Report ZAB_IW2180287051SORT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAB_IW2180287051SORT.
+
+" Feldgruppe deklarieren
+FIELD-GROUPS: HEADER, KOPF, SEGMENT.
+
+" EKKO: Einkaufsbelegkopf
+" EKPO: Einkaufsbelegposition
+"NODES: EKKO, EKPO.
+NODES: MKPF, MSEG.
+
+WRITE: / 'Materialbelege'.
+
+" Frage: INSERT nach oder vor S-O-S? nach
+START-OF-SELECTION.
+
+" Struktur der Feldgruppe deklarieren
+" 5 Eigenschaften: Belegnr, Buchungsdat, Matnr, Menge, Sachbearbeiter
+*INSERT EKKO-EBELN, EKKO-BEDAT, EKKO-ERNAM INTO HEADER,
+*  EKPO-MATNR, EKPO-MENGE INTO REMAINDER.
+" Frage: welche Eigenschaft zu welchem Feld? VS Seite 92
+
+INSERT: MKPF-MBLNR MKPF-BUDAT MSEG-ZEILE INTO HEADER,
+  MKPF-BLART MKPF-USNAM INTO KOPF,
+  MSEG-BWART MSEG-MATNR MSEG-MENGE INTO SEGMENT.
+
+GET MKPF.
+  EXTRACT KOPF.
+
+GET MSEG.
+  EXTRACT SEGMENT.
+
+END-OF-SELECTION.
+  " strukturierter Datentyp
+  TYPES: BEGIN OF TY_MATERIAL,
+          MATNR LIKE MSEG-MATNR,
+          MENGE LIKE MSEG-MENGE,
+         END OF TY_MATERIAL.
+  " Arbeitsbereich und intern Tabelle
+  " WA: working area, IT: intern Tabelle
+  DATA:
+    WA_MATERIAL TYPE TY_MATERIAL,
+    IT_MATERIAL TYPE SORTED TABLE OF TY_MATERIAL
+      WITH UNIQUE KEY MATNR.
+
+
+
+  SORT ASCENDING BY MKPF-BUDAT MKPF-MBLNR.
+  LOOP.
+    AT FIRST.
+      ULINE.
+      WRITE / 'Start of LOOP'.
+      ULINE.
+    ENDAT.
+    AT KOPF.
+      WRITE: / 'K: ', MKPF-MBLNR, MKPF-BUDAT, MKPF-BLART, MKPF-USNAM.
+    ENDAT.
+    AT SEGMENT.
+      WRITE: / 'S: ', MSEG-ZEILE, MSEG-BWART, MSEG-MATNR, MSEG-MENGE.
+      READ TABLE IT_MATERIAL INTO WA_MATERIAL
+        WITH TABLE KEY MATNR = MSEG-MATNR.
+      IF sy-subrc = 0.
+        WA_MATERIAL-MENGE = WA_MATERIAL-MENGE + MSEG-MENGE.
+        MODIFY TABLE IT_MATERIAL FROM WA_MATERIAL.
+      ELSE.
+        WA_MATERIAL-MATNR = MSEG-MATNR.
+        WA_MATERIAL-MENGE = MSEG-MENGE.
+        INSERT WA_MATERIAL INTO TABLE IT_MATERIAL.
+      ENDIF.
+    ENDAT.
+    AT LAST.
+      ULINE.
+      WRITE / 'End of LOOP'.
+    ENDAT.
+  ENDLOOP.
+
+  ULINE.
+  WRITE: / 'Bewegte Materialmenge'.
+  ULINE.
+  WRITE: /(40)'Materialnummer', 'Gesamtmenge'.
+  ULINE.
+  WRITE: / 'Start of LOOP'.
+  LOOP AT IT_MATERIAL INTO WA_MATERIAL.
+    WRITE: / WA_MATERIAL-MATNR, WA_MATERIAL-MENGE.
+  ENDLOOP.
+  WRITE: / 'End of LOOP'.
