@@ -1,0 +1,406 @@
+*&---------------------------------------------------------------------*
+*& Report ZAB_IW2180287_APL02_FLOW
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAB_IW2180287_APL02_FLOW.
+
+" Bemerkung für Tabelle
+" VBELN: Belegnummer
+" VBAK: Verkaufsbeleg - Kopfdaten
+" VBAP: Verkaufsbeleg - Position
+" LIKP: Lieferung - Kopf
+" LIPS: Lieferung - Position
+" VBRK: Rechnung - Kopf
+" VBRP: Rechnung - Position
+" VBFA: Vertriebsbelegfluss
+
+" Parameter Belegnummer
+PARAMETERS P_VBELN TYPE VBELN.
+
+" Arbeitsbereich für Vertriebsbelege
+" Kopfdaten
+DATA WA_VBAK TYPE VBAK.
+DATA WA_VBAK_VOR TYPE VBAK.
+DATA WA_VBAK_NACH TYPE VBAK.
+
+" Lieferung
+DATA WA_LIKP TYPE LIKP.
+DATA WA_LIKP_VOR TYPE LIKP.
+DATA WA_LIKP_NACH TYPE LIKP.
+
+" Rechnung
+DATA WA_VBRK TYPE VBRK.
+DATA WA_VBRK_VOR TYPE VBRK.
+DATA WA_VBRK_NACH TYPE VBRK.
+
+" Arbeitsbereich für Belegpositionen
+" Positionen
+DATA WA_VBAP TYPE VBAP.
+DATA WA_VBAP_VOR TYPE VBAP.
+DATA WA_VBAP_NACH TYPE VBAP.
+
+" Lieferung
+DATA WA_LIPS TYPE LIPS.
+DATA WA_LIPS_VOR TYPE LIPS.
+DATA WA_LIPS_NACH TYPE LIPS.
+
+" Rechnung
+DATA WA_VBRP TYPE VBRP.
+DATA WA_VBRP_VOR TYPE VBRP.
+DATA WA_VBRP_NACH TYPE VBRP.
+
+" Zeiger auf Belegnummer von Vorgänger- und Nachfolgerbelegen
+DATA ZE_VBFA_VOR TYPE VBFA.
+DATA ZE_VBFA_NACH TYPE VBFA.
+
+" Saved Belegnummer - Saved at line selection
+DATA S_VBELN TYPE VBAK-VBELN.
+
+" Counter index
+DATA: counter TYPE i VALUE 0,
+      counter_vor TYPE i VALUE 0,
+      counter_nach TYPE i VALUE 0.
+
+" TODO: interne Tabelle für Farbschema
+
+" ABAP Farbecodes
+
+" interne Tabelle für Farbschema füllFen
+
+" HOTSPOT: nur einmal klicken
+FORMAT HOTSPOT ON.
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Verkaufsbeleg
+" Current Beleg | SELECT Vertriebsbeleg mit Belegnummer = P_VBELN
+" Syntax: SELECT fileds FROM table INTO CORRESPONDING FIELDS OF working area
+SELECT * FROM VBAK INTO CORRESPONDING FIELDS OF @WA_VBAK
+  WHERE VBELN = @P_VBELN.
+
+  " TODO: Add colors
+  " READ TABLE ... AUART
+  " FORMAT COLOR = ...
+
+  WRITE:/(11) 'Belegnummer', (17) 'Erstellungsdatum', (14) 'Sachbearbeiter',
+    (10) 'Belegdatum', (10) 'Belegart'.
+  WRITE:/(11) WA_VBAK-VBELN, (17) WA_VBAK-ERDAT, (14) WA_VBAK-ERNAM,
+    (10) WA_VBAK-AUDAT, (10) WA_VBAK-AUART.
+
+  " Belegposition für Current Beleg
+  WRITE:/(11) 'Belegnummer', (15) 'Positionsnummer', (14) 'Materialnummer'.
+  SELECT * FROM VBAP INTO CORRESPONDING FIELDS OF @WA_VBAP
+    WHERE VBELN = @WA_VBAK-VBELN.
+
+    WRITE:/(11) WA_VBAP-VBELN, (15) WA_VBAP-POSNR, (14) WA_VBAP-MATNR.
+
+  ENDSELECT.
+
+  counter = counter + 1.
+
+  "FORMAT COLOR background ...
+
+  ULINE.
+
+ENDSELECT.
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Rechnung
+SELECT * FROM VBRK INTO CORRESPONDING FIELDS OF @WA_VBRK
+  WHERE VBELN = @P_VBELN.
+
+  "READ TABLE .. KEY AUART = ...FKART
+  "FORMAT COLOR = WA_COLORS-COLOR.
+
+  WRITE:/(11) 'Belegnummer', (10) 'Fakturaart', (7) 'Währung',
+    (12) 'Fakturadatum'.
+  WRITE:/(11) WA_VBRK-VBELN, (10) WA_VBRK-FKART, (7) WA_VBRK-WAERK,
+    (12) WA_VBRK-FKDAT.
+
+  " Belegposition für Current Beleg
+  WRITE:/(11) 'Belegnummer', (15) 'Positionnummer', (8) 'Menge'.
+
+  SELECT * FROM VBRP INTO CORRESPONDING FIELDS OF @WA_VBRP
+    WHERE VBELN = @WA_VBRK-VBELN.
+
+    WRITE:/(11) WA_VBRP-VBELN, (15) WA_VBRP-POSNR, (8) WA_VBRP-FKIMG.
+
+  ENDSELECT.
+
+  counter = counter + 1.
+
+  "FORMAT color background
+
+  ULINE.
+
+ENDSELECT.
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Lieferung
+SELECT * FROM LIKP INTO CORRESPONDING FIELDS OF @WA_LIKP
+  WHERE VBELN = @P_VBELN.
+
+  " Colors: line 223
+  " READ TABLE IT_COLORS
+  "FORMAT COLOR =
+
+  WRITE:/(11) 'Belegnummer', (17) 'Erstellungsdatum', (14) 'Sacharbeiter', (9) 'Lieferart'.
+  WRITE:/(11) WA_LIKP-VBELN, (17)WA_LIKP-ERDAT, (14)WA_LIKP-ERNAM, (9)WA_LIKP-LFART.
+
+  " Belegposition für Current Beleg
+  WRITE:/(11) 'Belegnummer', (15) 'Positionsnummer', (14) 'Materialnummer'.
+
+  SELECT * FROM LIPS INTO CORRESPONDING FIELDS OF @WA_LIPS
+    WHERE VBELN = @P_VBELN.
+
+    WRITE:/(11) WA_LIPS-VBELN, (15) WA_LIPS-POSNR, (14) WA_LIPS-MATNR.
+
+  ENDSELECT.
+
+  counter = counter + 1.
+
+  " color
+  " FORMAT COLOR background? line 259
+
+  ULINE.
+
+ENDSELECT.
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Vorgänger- und Nachfolgerbelege zeigen
+IF counter EQ 0.
+
+  WRITE:/ 'Vertriebsbeleg nicht gefunden'.
+  WRITE:/ 'Klicke', 'HIER', 'um das Programm zu verlassen'.
+  ULINE.
+
+" Vorgängerbeleg
+ELSE.
+  SELECT * FROM VBFA INTO CORRESPONDING FIELDS OF @ZE_VBFA_VOR
+    WHERE VBELN = @P_VBELN.
+
+    " Vorgänerbeleg anzeigen
+    SELECT * FROM VBAK INTO CORRESPONDING FIELDS OF @WA_VBAK_VOR
+      WHERE VBELN = @ZE_VBFA_VOR-VBELV.
+
+      "READ TABLE IT_COLORS ... line 297
+      "FORMAT COLOR =
+
+      WRITE:/'Vorgängerbeleg', WA_VBAK_VOR-VBELN.
+      WRITE:/(11) 'Belegnummer', (17) 'Erstellungsdatum', (14) 'Sachbearbeiter',
+        (10) 'Belegdatum', (10) 'Belegart'.
+      WRITE:/(11) WA_VBAK_VOR-VBELN, (17) WA_VBAK_VOR-ERDAT, (14) WA_VBAK_VOR-ERNAM,
+        (10) WA_VBAK_VOR-AUDAT, (10) WA_VBAK_VOR-AUART.
+
+      " Belegpositionen für Vorgängerbeleg
+      WRITE:/(11) 'Belegnummer', (15) 'Positionsnummer', (14) 'Materialnummer'.
+
+      SELECT * FROM VBAP INTO CORRESPONDING FIELDS OF @WA_VBAP_VOR
+        WHERE VBELN = @WA_VBAK_VOR-VBELN.
+
+        WRITE:/(11) WA_VBAP_VOR-VBELN, (15) WA_VBAP_VOR-POSNR, (14) WA_VBAP_VOR-MATNR.
+
+      ENDSELECT.
+
+      " FORMAT COLOR COL_BACKGROUND.
+      ULINE.
+
+    ENDSELECT.
+
+    " Rechnung
+    SELECT * FROM VBRK INTO CORRESPONDING FIELDS OF @WA_VBRK_VOR
+      WHERE VBELN = @ZE_VBFA_VOR-VBELV.
+
+      "READ TABLE IT_COLORS INTO WA_COLORS WITH KEY AUART = WA_VBRK_VOR-FKART.
+      "FORMAT COLOR = WA_COLORS-COLOR.
+
+      WRITE:/'Vorgängerbeleg',  WA_VBRK_VOR-VBELN.
+      WRITE:/(11) 'Belegnummer', (10) 'Fakturaart', (7) 'Währung',
+        (12) 'Fakturadatum'.
+      WRITE:/(11) WA_VBRK_VOR-VBELN, (10) WA_VBRK_VOR-FKART,
+        (7) WA_VBRK_VOR-WAERK, (12) WA_VBRK_VOR-FKDAT.
+
+      " Belegpostionen
+      WRITE:/(11) 'Belegnummer', (15) 'Positionsnummer', (8) 'Menge'.
+
+      SELECT * FROM VBRP INTO CORRESPONDING FIELDS OF @WA_VBRP_VOR
+        WHERE VBELN = @WA_VBRK_VOR-VBELN.
+
+        WRITE:/(11) WA_VBRP_VOR-VBELN, (15) WA_VBRP_VOR-POSNR,
+          (8) WA_VBRP_VOR-FKIMG.
+
+      ENDSELECT.
+
+      "FORMAT COLOR COL_BACKGROUND.
+      "ULINE.
+
+    ENDSELECT.
+
+    " Lieferung
+    SELECT * FROM LIKP INTO CORRESPONDING FIELDS OF @WA_LIKP_VOR
+      WHERE VBELN = @ZE_VBFA_VOR-VBELV.
+
+      "READ TABLE IT_COLORS INTO WA_COLORS WITH KEY AUART = WA_LIKP_VOR-LFART.
+      "FORMAT COLOR = WA_COLORS-COLOR.
+
+      WRITE:/'Vorgängerbeleg',  WA_LIKP_VOR-VBELN.
+      WRITE:/(11) 'Belegnummer', (17) 'Erstellungsdatum', (14) 'Sachbearbeiter',
+        (9) 'Lieferart'.
+      WRITE:/(11) WA_LIKP_VOR-VBELN, (17) WA_LIKP_VOR-ERDAT,
+        (14) WA_LIKP_VOR-ERNAM, (9) WA_LIKP_VOR-LFART.
+
+      " Belegpostionen
+      WRITE:/(11) 'Belegnummer', (15) 'Positionsnummer', (14) 'Materialnummer'.
+
+      SELECT * FROM LIPS INTO CORRESPONDING FIELDS OF @WA_LIPS_VOR
+        WHERE VBELN = @WA_LIKP_VOR-VBELN.
+
+        WRITE:/(11) WA_LIPS_VOR-VBELN, (15) WA_LIPS_VOR-POSNR, (14) WA_LIPS_VOR-MATNR.
+
+      ENDSELECT.
+
+      "FORMAT COLOR COL_BACKGROUND.
+      "ULINE.
+
+    ENDSELECT.
+    " ENDSELECT LIKP Lieferung - Kopf
+
+    counter_vor = counter_vor + 1.
+
+  ENDSELECT.
+  "ENDSELECT VBFA
+
+  IF counter_vor EQ 0.
+    WRITE:/ 'Keinen Vorgängerbelg gefunden'.
+    ULINE.
+  ENDIF.
+
+  " Nachfolgerbeleg
+  SELECT * FROM VBFA INTO CORRESPONDING FIELDS OF @ZE_VBFA_NACH
+    WHERE VBELV = @P_VBELN.
+
+    " Nachfolgerbeleg anzeigen
+    SELECT * FROM VBAK INTO CORRESPONDING FIELDS OF @WA_VBAK_NACH
+      WHERE VBELN = @ZE_VBFA_NACH-VBELN.
+
+      "READ TABLE IT_COLORS INTO WA_COLORS WITH KEY AUART = WA_VBAK_NACH-AUART.
+      "FORMAT COLOR = WA_COLORS-COLOR.
+
+      WRITE:/'Nachfolgerbeleg ', WA_VBAK_NACH-VBELN.
+      WRITE:/(11) 'Belegnummer', (17) 'Erstellungsdatum',
+        (14) 'Sachbearbeiter', (10) 'Belegdatum', (10) 'Belegart'.
+      WRITE:/(11) WA_VBAK_NACH-VBELN, (17) WA_VBAK_NACH-ERDAT,
+        (14) WA_VBAK_NACH-ERNAM, (10) WA_VBAK_NACH-AUDAT,
+        (10) WA_VBAK_NACH-AUART.
+
+      " Belegpositionen für Nachfolgerbelege
+      WRITE:/(11) 'Belegnummer', (15) 'Positionsnummer', (14) 'Materialnummer'.
+
+      SELECT * FROM VBAP INTO CORRESPONDING FIELDS OF @WA_VBAP_NACH
+        WHERE VBELN = @WA_VBAK_NACH-VBELN.
+
+        WRITE:/(11) WA_VBAP_NACH-VBELN, (15) WA_VBAP_NACH-POSNR, (14) WA_VBAP_NACH-MATNR.
+
+      ENDSELECT.
+
+      "FORMAT COLOR COL_BACKGROUND.
+
+    ENDSELECT.
+    "ENDSELECT VBAK
+
+
+    " Rechnung
+    SELECT * FROM VBRK INTO CORRESPONDING FIELDS OF @WA_VBRK_NACH
+      WHERE VBELN = @ZE_VBFA_NACH-VBELN.
+
+      "READ TABLE IT_COLORS INTO WA_COLORS WITH KEY AUART = WA_VBRK_NACH-FKART.
+      "FORMAT COLOR = WA_COLORS-COLOR.
+
+      WRITE:/'Nachfolgerbeleg',  WA_VBRK_NACH-VBELN.
+      WRITE:/(11) 'Belegnummer', (10) 'Fakturaart', (7) 'Währung',
+        (12) 'Fakturadatum'.
+      WRITE:/(11) WA_VBRK_NACH-VBELN, (10) WA_VBRK_NACH-FKART,
+        (7) WA_VBRK_NACH-WAERK, (12) WA_VBRK_NACH-FKDAT.
+
+      " Belegpostionen
+      WRITE:/(11) 'Belegnummer', (15) 'Positionsnummer', (8) 'Menge'.
+
+      SELECT * FROM VBRP INTO CORRESPONDING FIELDS OF @WA_VBRP_NACH
+        WHERE VBELN = @WA_VBRK_NACH-VBELN.
+
+        WRITE:/(11) WA_VBRP_NACH-VBELN, (15) WA_VBRP_NACH-POSNR, (8) WA_VBRP_NACH-FKIMG.
+
+      ENDSELECT.
+
+      "FORMAT COLOR COL_BACKGROUND.
+      "ULINE.
+
+    ENDSELECT.
+    " ENDSELECT VBRK
+
+
+    " Lieferung
+    SELECT * FROM LIKP INTO CORRESPONDING FIELDS OF @WA_LIKP_NACH
+      WHERE VBELN = @ZE_VBFA_NACH-VBELN.
+
+    "READ TABLE IT_COLORS INTO WA_COLORS WITH KEY AUART = WA_LIKP_NACH-LFART.
+    "FORMAT COLOR = WA_COLORS-COLOR.
+
+      WRITE:/'Nachfolgerbeleg',  WA_LIKP_NACH-VBELN.
+      WRITE:/(11) 'Belegnummer', (17) 'Erstellungsdatum',
+        (14) 'Sachbearbeiter', (9) 'Lieferart'.
+      WRITE:/(11) WA_LIKP_NACH-VBELN, (17) WA_LIKP_NACH-ERDAT,
+        (14) WA_LIKP_NACH-ERNAM, (9) WA_LIKP_NACH-LFART.
+
+      " Belegpostionen
+      WRITE:/(11) 'Belegnummer', (15) 'Positionsnummer', (14) 'Materialnummer'.
+
+      SELECT * FROM LIPS INTO CORRESPONDING FIELDS OF @WA_LIPS_NACH
+        WHERE VBELN = @WA_LIKP_NACH-VBELN.
+
+        WRITE:/(11) WA_LIPS_NACH-VBELN, (15) WA_LIPS_NACH-POSNR, (14) WA_LIPS_NACH-MATNR.
+
+      ENDSELECT.
+
+      "FORMAT COLOR COL_BACKGROUND.
+      "ULINE.
+
+    ENDSELECT.
+    " ENDSELECT LIKP
+
+    counter_nach = counter_nach + 1.
+
+   ENDSELECT.
+   "ENDSELECT VBFA
+
+   IF counter_nach EQ 0.
+
+    WRITE:/ 'Keinen Nachfolgerbeleg gefunden.'.
+    ULINE.
+    counter_nach = counter_nach + 1.
+
+  ENDIF.
+
+ENDIF.
+" ENDIF counter EQ 0
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+AT LINE-SELECTION.
+  " Die Belegnummer in selektierter Zeile in S_VBELN speichern.
+  READ CURRENT LINE LINE VALUE INTO S_VBELN.
+
+  IF S_VBELN CA '1234567890'.
+    " Programm mit 'Parameter Belegnummer' = 'Saved Belegnummer' aufrufen.
+    SUBMIT ZAB_IW2180287_APL02_FLOW WITH P_VBELN = S_VBELN.
+
+  ELSEIF S_VBELN CA 'HIER'.
+
+    LEAVE TO SCREEN 0.
+
+  ENDIF.
