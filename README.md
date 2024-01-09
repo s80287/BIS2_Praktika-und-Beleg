@@ -1,2 +1,2 @@
-# BIS1_Praktikumsaufgaben
-Praktikumsaufgabe für Fach BIS2
+# BIS2 Praktikumsaufgaben und Beleg
+Praktikumsaufgaben und Beleg für Fach BIS2
